@@ -1,45 +1,32 @@
-include("src/libconv_diff_eq.jl")
+include("src/cm_functions.jl")
 
-using Main.LaxFri
+using Main.CMFunc
+using PyCall
 using PyPlot
 
-function exact_solution(x, t)
-    a = 0.4
-    return sin(2 * pi * (x - a * t)) + (x - a * t)^3
+convect = create_eq()
+
+h_arr = range(convect.x_left, stop=convect.x_right, length=convect.h_num)
+tau_arr = range(convect.t_left, stop=convect.t_right, length=convect.tau_num)
+
+@simd for iter in 1:convect.h_num
+    convect.result[1, iter] = exact_solution(convect.x_left + (iter - 1) * convect.h, convect.t_left)
 end
 
-const x_left = 0
-const x_right = 1
-
-const t_left = 0
-const t_right = 1
-
-println("Hello. Enter the number of splits: ")
-inputed_string = readline()
-h_num = parse(Int, inputed_string)
-h_candidate = (x_right - x_left) / h_num
-h = h_candidate > eps(Float32) ? h_candidate : eps(Float32)
-
-println("Enter the number of time layers: ")
-inputed_string = readline()
-tau_num = parse(Int, inputed_string)
-tau_candidate = (t_right - t_left) / tau_num
-tau = tau_candidate > eps(Float32) ? tau_candidate : eps(Float32)
-
-result = Array{Array{Float64}}(undef, tau_num)
-
-h_arr = LinRange(x_left, x_right, h_num)
-tau_arr = LinRange(t_left, t_right, tau_num)
-
-
-result[1] = [exact_solution(x, t_left) for x in h_arr]
-
-a = 0.4
-
-@simd for iter in 2:tau_num
-    result[iter] = get_new_time_layer(result[iter - 1], h_num, h, tau, a)
-    result[iter][1] = exact_solution(x_left, iter * tau)
-    result[iter][h_num] = exact_solution(x_right, iter * tau)
+@simd for iter in 2:convect.tau_num
+    for opr_iter in 2:convect.h_num-1
+        convect.result[iter, opr_iter] = (0.5 * (convect.result[iter - 1, opr_iter + 1]
+            + convect.result[iter - 1, opr_iter - 1]) - convect.a * (convect.tau / (2 * convect.h))
+            * (convect.result[iter - 1, opr_iter + 1] - convect.result[iter - 1, opr_iter - 1]))
+    end
+    convect.result[iter, 1] = exact_solution(convect.x_left, (iter - 1) * convect.tau)
+    convect.result[iter, convect.h_num] = exact_solution(convect.x_right, iter * convect.tau)
 end
 
-println(result)
+max_error = get_real_error(convect)
+
+println("Maximum error is: $(max_error)")
+
+surf(h_arr, tau_arr, convect.result, cmap="jet")
+title("Convect equation. Lax–Friedrichs method. H-nodes: $(convect.h_num). Tau-nodes: $(convect.tau_num).")
+show()
