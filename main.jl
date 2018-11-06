@@ -27,6 +27,6 @@ max_error = get_real_error(convect)
 
 println("Maximum error is: $(max_error)")
 
-surf(h_arr, tau_arr, convect.result, cmap="jet")
+surf(h_arr, tau_arr, convect.result, cmap="coolwarm")
 title("Convect equation. Lax–Friedrichs method. H-nodes: $(convect.h_num). Tau-nodes: $(convect.tau_num).")
 show()
