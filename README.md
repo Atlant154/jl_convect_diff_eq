@@ -37,5 +37,7 @@ As you can see, the python code is almost two orders of magnitude slower.
 
 ## Visualization
 
+![visualization](doc/visualization.png)
+
 Plotting is implemented using a PyPlot. It works correctly **only** when running from an external terminal.  
 You can turn off the visualization by commenting out the relevant lines in the main.jl: 19 - 26.
