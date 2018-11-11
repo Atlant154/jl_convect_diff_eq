@@ -2,6 +2,7 @@ include("src/cm_functions.jl")
 
 using Main.CMFunc
 using PyPlot
+pygui(true)
 using BenchmarkTools
 
 # Creating equation structure:
@@ -22,5 +23,5 @@ tau_arr = range(convect.t_range[1], stop=convect.t_range[2], length=convect.tau_
 
 # Ploting the surface of approxiamte solution:
 surf(h_arr, tau_arr, convect.result, cmap="coolwarm")
-title("Convect equation. Lax–Friedrichs method. H-nodes: $(convect.h_num). Tau-nodes: $(convect.tau_num).")
+title("Lax–Friedrichs method. Space splits: $(convect.h_num). Time splits: $(convect.tau_num).")
 show()
