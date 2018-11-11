@@ -1,14 +1,20 @@
+NON_OPTIMIZATION_FLAGS := --depwarn=yes --procs auto --math-mode=ieee --color=yes --optimize=0
+OPTIMIZATION_FLAGS := --optimize=3 --sysimage-native-code=yes --compiled-modules=yes --procs auto --math-mode=fast --color=yes
+
+SOURCES := main.jl src/cm_functions.jl
 
 all: release
 
 # Additional warning flags, safe math, without optimization:
-debug: main.jl src/cm_functions.jl
-	julia --depwarn=yes --procs auto --math-mode=ieee --color=yes --optimize=0 main.jl
+debug: $(SOURCES)
+	julia $(NON_OPTIMIZATION_FLAGS) main.jl
 
 # Maximum optimization, increase lib precompilation, unsafe math:
-release: main.jl src/cm_functions.jl
-	julia --optimize=3 --sysimage-native-code=yes --compiled-modules=yes --procs auto --math-mode=fast --color=yes main.jl
+release: $(SOURCES)
+	julia $(OPTIMIZATION_FLAGS) main.jl
 
-# Without optimization:
-test: main.jl src/cm_functions.jl
-	julia --procs auto --optimize=0 --color=yes  main.jl
+speed_test: $(SOURCE) ./test/speed.jl
+	echo "Without optimization(Debug):"
+	julia $(NON_OPTIMIZATION_FLAGS) ./test/speed.jl
+	echo "With optimization(Release):"
+	julia $(OPTIMIZATION_FLAGS) ./test/speed.jl
