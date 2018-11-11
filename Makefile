@@ -13,8 +13,13 @@ debug: $(SOURCES)
 release: $(SOURCES)
 	julia $(OPTIMIZATION_FLAGS) main.jl
 
+# Speed tests with different optimization flags:
 speed_test: $(SOURCE) ./test/speed.jl
 	echo "Without optimization(Debug):"
 	julia $(NON_OPTIMIZATION_FLAGS) ./test/speed.jl
 	echo "With optimization(Release):"
 	julia $(OPTIMIZATION_FLAGS) ./test/speed.jl
+
+# Installation of julia dependencies:
+deps_install: ./deps/install.jl
+	julia ./deps/install.jl

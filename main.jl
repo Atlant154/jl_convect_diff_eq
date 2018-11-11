@@ -16,7 +16,7 @@ max_error =  get_real_error(convect)
 # Printing the error:
 println("Maximum error is $(max_error).")
 
-# Geting 0x abd 0y arrays:
+# Geting 0x and 0y arrays:
 h_arr = range(convect.x_left, stop=convect.x_right, length=convect.h_num)
 tau_arr = range(convect.t_left, stop=convect.t_right, length=convect.tau_num)
 
