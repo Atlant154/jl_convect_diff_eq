@@ -7,36 +7,34 @@ export create_eq, get_h, get_tau
 export get_result
 export convect_eq
 
-struct convect_eq
-    x_left::Float32
-    x_right::Float32
-    t_left::Float32
-    t_right::Float32
-    h_num::Int
-    tau_num::Int
-    h
-    tau
-    a
+mutable struct convect_eq
+    x_range::Tuple{Float32, Float32}
+    t_range::Tuple{Float32, Float32}
+    h_num::UInt32
+    tau_num::UInt32
+    h::Float32
+    tau::Float32
+    a::Float32
     result
 end
 
-function get_h(x_left::Float32, x_right::Float32)
+function get_h(x_range::Tuple{Float32, Float32})
 
     println("Hello. Enter the number of splits: ")
     inputed_string = readline()
-    h_num = parse(Int, inputed_string)
-    h_candidate = (x_right - x_left) / h_num
+    h_num = parse(UInt32, inputed_string)
+    h_candidate = (x_range[2] - x_range[1]) / h_num
     h::Float32 = h_candidate > eps(Float32) ? h_candidate : eps(Float32)
 
     return (h_num, h)
 end
 
-function get_tau(t_left::Float32, t_right::Float32)
+function get_tau(t_range::Tuple{Float32, Float32})
 
     println("Enter the number of time layers: ")
     inputed_string = readline()
-    tau_num = parse(Int, inputed_string)
-    tau_candidate = (t_right - t_left) / tau_num
+    tau_num = parse(UInt32, inputed_string)
+    tau_candidate = (t_range[2] - t_range[1]) / tau_num
     tau::Float32 = tau_candidate > eps(Float32) ? tau_candidate : eps(Float32)
 
     return (tau_num, tau)
@@ -45,23 +43,21 @@ end
 function create_eq()
     # Traditional bounds. Change if necessary!
     # Space bounds:
-    x_left::Float32 = 0.0
-    x_right::Float32 = 1.0
+    x_range = (Float32(0.0), Float32(1.0))
     # Time bounds:
-    t_left::Float32 = 0.0
-    t_right::Float32 = 1.0
+    t_range = (Float32(0.0), Float32(1.0))
 
     # Achtung! Hardcoded constand:
     a::Float32 = 0.4
 
-    (h_num, h) = CMFunc.get_h(x_left, x_right)
-    (tau_num, tau) = CMFunc.get_tau(t_left, t_right)
+    (h_num, h) = CMFunc.get_h(x_range)
+    (tau_num, tau) = CMFunc.get_tau(t_range)
 
     # Creating the solution array:
     result_array = Array{Float32}(undef, tau_num, h_num)
 
     # Construction of equation structure:
-    convection = convect_eq(x_left, x_right, t_left, t_right, h_num, tau_num, h, tau, a, result_array)
+    convection = convect_eq(x_range, t_range, h_num, tau_num, h, tau, a, result_array)
 
     return convection
 end
@@ -73,25 +69,41 @@ function exact_solution(x, t)
 end
 
 function get_result(convect::convect_eq)
-    for iter in 1:convect.h_num
-        convect.result[1, iter] = exact_solution(convect.x_left + (iter - 1) * convect.h, convect.t_left)
+    x_left = convect.x_range[1]
+    x_right = convect.x_range[2]
+    t_left = convect.t_range[1]
+
+    tau_num = convect.tau_num
+    h_num = convect.h_num
+
+    h = convect.h
+    tau = convect.tau
+    a = convect.a
+
+    result = Array{Float32}(undef, tau_num, h_num)
+
+    for iter in 1:h_num
+        result[1, iter] = exact_solution(x_left + (iter - 1) * h, t_left)
     end
 
-    for iter in 2:convect.tau_num
-        @simd for opr_iter in 2:convect.h_num-1
-            convect.result[iter, opr_iter] = (0.5 * (convect.result[iter - 1, opr_iter + 1]
-                + convect.result[iter - 1, opr_iter - 1]) - convect.a * (convect.tau / (2 * convect.h))
-                * (convect.result[iter - 1, opr_iter + 1] - convect.result[iter - 1, opr_iter - 1]))
+    for iter in 2:tau_num
+        @simd for opr_iter in 2:h_num-1
+            result[iter, opr_iter] = (0.5 * (result[iter - 1, opr_iter + 1]
+                + result[iter - 1, opr_iter - 1]) - a * (tau / (2 * h))
+                * (result[iter - 1, opr_iter + 1] - result[iter - 1, opr_iter - 1]))
         end
-        convect.result[iter, 1] = exact_solution(convect.x_left, (iter - 1) * convect.tau)
-        convect.result[iter, convect.h_num] = exact_solution(convect.x_right, iter * convect.tau)
+        result[iter, 1] = exact_solution(x_left, (iter - 1) * tau)
+        result[iter, h_num] = exact_solution(x_right, iter * tau)
     end
+
+    convect.result = result
+
     return convect
 end
 
 function get_real_error(convect::convect_eq)
-    x_left = convect.x_left
-    t_left = convect.t_left
+    x_left = convect.x_range[1]
+    t_left = convect.t_range[1]
 
     tl_num = convect.tau_num
     h_num = convect.h_num

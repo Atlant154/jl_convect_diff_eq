@@ -17,8 +17,8 @@ max_error =  get_real_error(convect)
 println("Maximum error is $(max_error).")
 
 # Geting 0x and 0y arrays:
-h_arr = range(convect.x_left, stop=convect.x_right, length=convect.h_num)
-tau_arr = range(convect.t_left, stop=convect.t_right, length=convect.tau_num)
+h_arr = range(convect.x_range[1], stop=convect.x_range[2], length=convect.h_num)
+tau_arr = range(convect.t_range[1], stop=convect.t_range[2], length=convect.tau_num)
 
 # Ploting the surface of approxiamte solution:
 surf(h_arr, tau_arr, convect.result, cmap="coolwarm")
